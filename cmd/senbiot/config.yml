@@ -1,0 +1,322 @@
+---
+setups:
+# tmobilenl 01b setup    
+    -   setup:       ublox01b
+        date:        2017-10-27
+        provider:    t-mobilenl
+# reboot
+        reboot:
+        -   request:  AT+NRB
+            response: REBOOTING
+# init, settings stored in NVram, has to run only once at each provider setup
+        init:
+        -   request:    AT+CFUN=0
+            response:   OK
+        -   request:    AT+NCONFIG=AUTOCONNECT,FALSE
+            response:   OK
+        -   request:    AT+NCONFIG=CR_0354_0338_SCRAMBLING,FALSE
+            response:   OK
+        -   request:    AT+NCONFIG=CR_0859_SI_AVOID,FALSE
+            response:   OK
+        -   request:    AT+NCDP=172.16.4.22
+            response:   OK
+        -   request:    AT+CGDCONT=1,"IP","oceanconnect.t-mobile.nl" 
+            response:   OK
+#
+        setupnetwork:
+        -   request:    AT+CFUN=1 # not necessary any more, COPS takes care of that
+            response:   OK
+        -   request:    AT+NBAND=8
+            response:   OK
+        -   request:    AT+COPS=1,2,"20416"
+            response:   OK
+#
+        waitfornetwork:
+        -   request:    AT+CSQ
+            response:
+            negativeresponse:  CSQ:99,99
+            waitforresponse:
+        -   request:    AT+CGATT?
+            response:
+            negativeresponse:   CGATT:0
+            waitforresponse: CGATT:1
+#
+        configinfo:
+        -   request:    AT+CGMM # Manufacturer of module
+            response:
+        -   request:    AT+CGMR # Firmware of module
+            response:
+        -   request:    ATi9 # firmware version
+            response:     
+        -   request:    AT+CGSN=1	# imeinumber
+            response:     
+        -   request:    AT+NCONFIG?  # configuration
+            response:     
+
+        networkinfo:
+        -   request:    AT+CSQ	# quality of signal
+            response:     
+        -   request:    AT+CGATT?	# IP-number
+            response:     
+        -   request:    AT+CSCON?	# Connection, Roaming
+            response:     
+        -   request:    AT+NPING=172.16.14.22   # 
+            response:     
+        -   request:    AT+CEREG?	# 
+            response:     
+        -   request:    AT+NQMGS	# message status
+            response:     
+        -   request:    AT+NUESTATS # Network statistics
+            response:
+        getmsgresponse:
+        -   request:    AT+NMSI=1
+            response:   OK
+        sendmesssagestring: AT+NMGS=
+# vodafone ublox 01b setup        
+    -   setup:       ublox01b
+        date:        2017-10-27
+        provider:    vodafone
+# reboot
+        reboot:
+        -   request:  AT+NRB
+            response: REBOOTING
+# init, settings stored in NVram, has to run only once at each provider setup
+        init:
+        -   request:    AT+CFUN=0
+            response:   OK
+        -   request:    AT+NCONFIG=AUTOCONNECT,FALSE
+            response:   OK
+        -   request:    AT+NCONFIG=CR_0354_0338_SCRAMBLING,TRUE
+            response:   OK
+        -   request:    AT+NCONFIG=CR_0859_SI_AVOID,FALSE
+            response:   OK
+        -   request:    AT+CGDCONT=1,"IP","nb.inetd.gdsp" 
+            response:   OK
+#
+        setupnetwork:
+        -   request:    AT+CFUN=1 # not necessary any more, COPS takes care of that
+            response:   OK
+        -   request:    AT+NBAND=20
+            response:   OK
+        -   request:    AT+COPS=1,2,"20404"
+            response:   OK
+#
+        waitfornetwork:
+        -   request:    AT+CSQ
+            response:
+            negativeresponse:  CSQ:99,99
+            waitforresponse:
+        -   request:    AT+CGATT?
+            response:
+            negativeresponse:   CGATT:0
+            waitforresponse: CGATT:1
+#
+        configinfo:
+        -   request:    AT+CGMM # Manufacturer of module
+            response:
+        -   request:    AT+CGMR # Firmware of module
+            response:
+        -   request:    ATi9 # firmware version
+            response:     
+        -   request:    AT+CGSN=1   # imeinumber
+            response:     
+        -   request:    AT+NCONFIG?  # configuration
+            response:     
+
+        networkinfo:
+        -   request:    AT+CSQ  # quality of signal
+            response:     
+        -   request:    AT+CGATT?   # IP-number
+            response:     
+        -   request:    AT+CSCON?   # Connection, Roaming
+            response:     
+        -   request:    AT+NPING=8.8.8.8   # 
+            response:     
+        -   request:    AT+CEREG?   # 
+            response:     
+        -   request:    AT+NQMGS    # message status
+            response:     
+        -   request:    AT+NUESTATS # Network statistics
+            response:
+
+        getmsgresponse:
+        -   request:    AT+NMSI=1
+            response:   OK
+
+        sendmesssagestring: AT+NMGS=
+# tmobilenl 02b setup    
+    -   setup:     ublox02b
+        date:        2017-10-27
+        provider:    t-mobilenl
+# reboot
+        reboot:
+        -   request:  AT+NRB
+            response: REBOOTING
+# init, settings stored in NVram, has to run only once at each provider setup
+        init:
+        -   request:    AT+CFUN=0
+            response:   OK
+        -   request:    AT+NCONFIG=AUTOCONNECT,FALSE
+            response:   OK
+        -   request:    AT+NCONFIG="CR_0354_0338_SCRAMBLING","FALSE"
+            response:   OK
+        -   request:    AT+NCONFIG="CR_0859_SI_AVOID","FALSE"
+            response:   OK
+        -   request:    AT+NCDP="172.16.4.22"
+            response:   OK
+        -   request:    AT+CGDCONT=1,"IP","oceanconnect.t-mobile.nl" 
+            response:   OK
+#
+        setupnetwork:
+        -   request:    AT+CFUN=1 # not necessary any more, COPS takes care of that
+            response:   OK
+        -   request:    AT+NBAND=8
+            response:   OK
+        -   request:    AT+COPS=1,2,"20416"
+            response:   OK
+#
+        waitfornetwork:
+        -   request:    AT+CSQ
+            response:
+            negativeresponse:  CSQ:99,99
+            waitforresponse:
+        -   request:    AT+CGATT?
+            response:
+            negativeresponse:   CGATT:0
+            waitforresponse: CGATT:1
+#
+        configinfo:
+        -   request:    AT+CGMM # Manufacturer of module
+            response:
+        -   request:    AT+CGMR # Firmware of module
+            response:
+        -   request:    ATi9 # firmware version
+            response:     
+        -   request:    AT+CGSN=1   # imeinumber
+            response:     
+        -   request:    AT+NCONFIG?  # configuration
+            response:     
+
+        networkinfo:
+        -   request:    AT+CSQ  # quality of signal
+            response:     
+        -   request:    AT+CGATT?   # IP-number
+            response:     
+        -   request:    AT+CSCON?   # Connection, Roaming
+            response:     
+        -   request:    AT+NPING="172.16.14.22"   # 
+            response:     
+        -   request:    AT+CEREG?   # 
+            response:     
+        -   request:    AT+NQMGS   # get message queue
+            response:     
+        -   request:    AT+NQMGS    # message status
+            response:     
+        -   request:    AT+NUESTATS # Network statistics
+            response:
+        getmsgresponse:
+        -   request:    AT+NMSI=1
+            response:   OK
+        sendmesssagestring: AT+NMGS=
+# vodafone 02b setup    
+    -   setup:     ublox02b
+        date:        2017-10-27
+        provider:    vodafone
+# reboot
+        reboot:
+        -   request:  AT+NRB
+            response: REBOOTING
+# init, settings stored in NVram, has to run only once at each provider setup
+        init:
+        -   request:    AT+CFUN=0
+            response:   OK
+        -   request:    AT+NCONFIG=AUTOCONNECT,FALSE
+            response:   OK
+        -   request:    AT+NCONFIG="CR_0354_0338_SCRAMBLING","TRUE"
+            response:   OK
+        -   request:    AT+NCONFIG="CR_0859_SI_AVOID","FALSE"
+            response:   OK
+        -   request:    AT+CGDCONT=1, "IP","nb.inetd.gdsp"
+            response:   OK
+#
+        setupnetwork:
+        -   request:    AT+CFUN=1 # not necessary any more, COPS takes care of that
+            response:   OK
+        -   request:    AT+NBAND=20
+            response:   OK
+        -   request:    AT+COPS=1,2,"20404"
+            response:   OK
+#
+        waitfornetwork:
+        -   request:    AT+CSQ
+            response:
+            negativeresponse:  CSQ:99,99
+            waitforresponse:
+        -   request:    AT+CGATT?
+            response:
+            negativeresponse:   CGATT:0
+            waitforresponse: CGATT:1
+#
+        configinfo:
+        -   request:    AT+CGMM # Manufacturer of module
+            response:
+        -   request:    AT+CGMR # Firmware of module
+            response:
+        -   request:    ATi9 # firmware version
+            response:     
+        -   request:    AT+CGSN=1   # imeinumber
+            response:     
+        -   request:    AT+NCONFIG?  # configuration
+            response:     
+
+        networkinfo:
+        -   request:    AT+CSQ  # quality of signal
+            response:     
+        -   request:    AT+CGATT?   # IP-number
+            response:     
+        -   request:    AT+CSCON?   # Connection, Roaming
+            response:     
+        -   request:    AT+NPING="8.8.8.8"   # 
+            response:     
+        -   request:    AT+CEREG?   # 
+            response:     
+        -   request:    AT+NQMGS   # get message queue
+            response:     
+        -   request:    AT+NQMGS    # message status
+            response:     
+        -   request:    AT+NUESTATS # Network statistics
+            response:
+        getmsgresponse:
+        -   request:    AT+NMSI=1
+            response:   OK
+        sendmesssagestring: AT+NMGS=
+
+#   quicktel setup  not finished as of yet
+    -   setup:      quicktel
+        date:       2017-10-27
+        provider:   t-mobile
+        reboot:
+        -   request:    AT+NRB
+            response:   OK
+        init:
+        -   request:    AT+CFUN=0
+            response:   OK
+        -   request:    AT+CGDCONT=1, "IP","oceanconnect.t-mobile.nl"
+            response:   OK
+        setupnetwork:
+        -   request:    AT+CFUN=1
+            response:   OK
+        waitfornetwork:
+        -   request:    AT+CGATT?
+            response:     
+            waitforresponse: +CGAT:1
+        configinfo:
+        -   request:        AT+CGSN=1 # imeinumber
+            response:     
+        networkinfo:
+        -   request:    AT+CSQ  # quality of signal
+            response:     
+        getmsgresponse:
+        -   request:        AT+NMSI=1
+            response:       OK
+        sendmesssagestring:         AT+NMGS=
