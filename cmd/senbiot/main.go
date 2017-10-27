@@ -90,6 +90,11 @@ func main() {
 		Usage()
 		return
 	} else {
+		if len(*device) != 0 {
+			ChosenDevice = *device
+		} else {
+			ChosenDevice = c.Device
+		}
 
 	}
 
@@ -111,6 +116,11 @@ func main() {
 		Usage()
 		return
 	} else {
+		if len(*provider) != 0 {
+			ChosenProvider = *provider
+		} else {
+			ChosenProvider = c.Provider
+		}
 
 	}
 
@@ -118,20 +128,20 @@ func main() {
 		BaudRate: 9600,
 	}
 
-	port, err := serial.Open(*portID, mode)
+	port, err := serial.Open(ChosenPort, mode)
 	if err != nil {
 		log.Fatal("serial port can not be opened: ", err, *portID)
 	}
 	var currentSetup senbiotpkg.Setup
 	for _, v := range c.Stps {
 		//fmt.Printf("%d = %s\n", i, v.Provider)
-		if v.Provider == fmt.Sprintf("%s", *provider) && v.Setup == fmt.Sprintf("%s", *device) {
+		if v.Provider == ChosenProvider && v.Setup == ChosenDevice {
 			currentSetup = v
 			break
 		}
 	}
 	if len(currentSetup.Setup) == 0 {
-		log.Fatal("could not find setup for device ", *device, " for provider ", *provider)
+		log.Fatal("could not find setup for device ", ChosenDevice, " for provider ", ChosenProvider)
 	}
 	if len(commands) > 0 {
 		for _, aCommand := range commands {
