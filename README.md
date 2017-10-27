@@ -8,25 +8,33 @@
 
 NB-IOT is a LPWAN technology for bi-directional data traffic between devices and centralized cloud platforms. To configure such a device, a whole slew of AT commands is needed. Senbiot tries to simplify that to a standard set of settings and a simple senbiot "message" command
 
-NOTE: The API is currently unstable
 
 ## Installation
 
 To get started please get the Golang toolchains from the [Golang website](https://golang.org/). When you have a working go toolchain you can do:
 
 ```
-go get github.com/johanhenselmans/senbiot
+go get github.com/johanhenselmans/senbiotpkg
 ```
 
 And you are ready to go!
 
 ## Included tools
 
-Some simple tools for use with senbiot are included and located in the `cmd` folder of the root of the project.
+The tools made with senbiotpkg are located in the `cmd` folder of the root of the project. You just do a go build in the specific folder and run the resulting commands. 
 
-### Scan serialports (scanserialports)
+### Get serialports (getserialports)
 
-Commandline tool to scanserialports so as to determine which device to use.
+Commandline tool to scan serialports on the machine so as to determine which device to use.
+
+### Send a message via an NB-IOT device (senbiot)
+
+Commandline tool to send a message to an NB-``IOT network. Currently the device supported is the SODAQ NBIOT device, at https://shop.sodaq.com/en/nb-iot-shield-deluxe-dual-band-8-20.html. The network that are supported are the Vodafone and T-Mobile networks in the Netherlands. The device requires to have a 'through' connection to the serial port of the ublox device, which can be accomplished by using the Arduino sketch from http://support.sodaq.com/sodaq-one/at/. I have included the Arduino sketch in the folder SerialThrough, You should upload this to your Arduino board. That will make the
+ connection transparant from you linux/windows/macos machine, and you can shoot messages to the board.
+
+## Plans
+
+I have plans to get the board to work via Firmata, that should make it possible to retrieve the GPS coordinates from the board. 
 
 ## Contributing
 
