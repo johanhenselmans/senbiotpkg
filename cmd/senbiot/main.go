@@ -81,24 +81,37 @@ func main() {
 	}
 
 	//log.Print(c)
+	var ChosenDevice string
+	var ChosenPort string
+	var ChosenProvider string
 
-	if len(*device) == 0 {
+	if len(c.Device) == 0 && len(*device) == 0 {
 		fmt.Println("no device name present, please set device see config.yml for devicenames eg ublox01b, ublox02b, quicktel\n")
 		Usage()
 		return
+	} else {
+
 	}
 
-	if len(*portID) == 0 {
+	if len(c.PortID) == 0 && len(*portID) == 0 {
 		fmt.Println("no port name present, these are the available ports:\n")
 		senbiotpkg.ScanPorts()
 		Usage()
 		return
+	} else {
+		if len(*portID) != 0 {
+			ChosenPort = *portID
+		} else {
+			ChosenPort = c.PortID
+		}
 	}
 
-	if len(*provider) == 0 {
+	if len(c.Provider) == 0 && len(*provider) == 0 {
 		fmt.Println("no provider present please set provider: eg t-mobilenl, vodafone, see config.yml for provider names\n")
 		Usage()
 		return
+	} else {
+
 	}
 
 	mode := &serial.Mode{
@@ -125,71 +138,65 @@ func main() {
 			fmt.Printf("command: %s \n", aCommand)
 			switch aCommand {
 			case "ConfigInfo":
-				configDevice(port, currentSetup)
+				senbiotpkg.ConfigInfo(port, currentSetup)
 			case "NetworkInfo":
-				networkDevice(port, currentSetup)
+				NetworkInfo(port, currentSetup)
 			case "Init":
-				setupInit(port, currentSetup)
+				SetupInit(port, currentSetup)
 			case "Reboot":
-				rebootDevice(port, currentSetup)
+				RebootDevice(port, currentSetup)
 			case "SetupNetwork":
-				setupNetwork(port, currentSetup)
+				SetupNetwork(port, currentSetup)
 			case "SendMessage":
-				sendMsgs(port, currentSetup, message)
+				SendMsgs(port, currentSetup, message)
 			case "WaitForNetwork":
-				waitForNetwork(port, currentSetup)
+				WaitForNetwork(port, currentSetup)
 			case "ScanPorts":
 				senbiotpkg.ScanPorts()
 			}
 		}
 	} else {
 		// we assume the device has already been setup
-		setupNetwork(port, currentSetup)
-		waitForNetwork(port, currentSetup)
-		sendMsgs(port, currentSetup, message)
+		SetupNetwork(port, currentSetup)
+		WaitForNetwork(port, currentSetup)
+		SendMsgs(port, currentSetup, message)
 	}
 }
 
 // rebootDevice reboots the device and waits 7 seconds for it to come up
-func rebootDevice(port serial.Port, c senbiotpkg.Setup) {
+func RebootDevice(port serial.Port, c senbiotpkg.Setup) {
 	for _, v := range c.Reboot {
-		readwriteport(port, v)
+		senbiotpkg.ReadWritePort(port, v)
 	}
 	const delay = 7000 * time.Millisecond
 	time.Sleep(delay)
 }
 
-func configDevice(port serial.Port, c senbiotpkg.Setup) {
-	for _, v := range c.ConfigInfo {
-		readwriteport(port, v)
-	}
-}
-
-func networkDevice(port serial.Port, c senbiotpkg.Setup) {
+func NetworkInfo(port serial.Port, c senbiotpkg.Setup) {
 	for _, v := range c.NetworkInfo {
-		readwriteport(port, v)
+		senbiotpkg.ReadWritePort(port, v)
 	}
 }
 
 //the init section of the yaml page of the device with answers is run, stored in nv memory, has to be run only once
-func setupInit(port serial.Port, c senbiotpkg.Setup) {
+func SetupInit(port serial.Port, c senbiotpkg.Setup) {
 	for _, v := range c.Init {
-		readwriteport(port, v)
+		senbiotpkg.ReadWritePort(port, v)
 	}
 }
 
-func setupNetwork(port serial.Port, c senbiotpkg.Setup) {
+func SetupNetwork(port serial.Port, c senbiotpkg.Setup) {
 	for _, v := range c.SetupNetwork {
-		readwriteport(port, v)
+		senbiotpkg.ReadWritePort(port, v)
 	}
 }
 
-func waitForNetwork(port serial.Port, c senbiotpkg.Setup) string {
+func WaitForNetwork(port serial.Port, c senbiotpkg.Setup) string {
 	var result string
 	for _, v := range c.WaitForNetwork {
 		var i int
 		for i < 10 {
-			result = readwriteport(port, v)
+			result = senbiotpkg.ReadWritePort(port, v)
 			fmt.Printf("result = %s neg response: %s\n", result, v.NegativeResponse)
 			if !strings.Contains(result, v.NegativeResponse) {
 				i = 0
@@ -208,65 +215,8 @@ func waitForNetwork(port serial.Port, c senbiotpkg.Setup) string {
 	return result
 }
 
-func readResponse(port serial.Port) (response string) {
-	var n int
-	var err error
-	buff := make([]byte, 10)
-	var stringbuff string
-	var noofreturns int = 0
-
-	for {
-		n, err = port.Read(buff)
-		if err != nil {
-			log.Fatal(err)
-			break
-		}
-		if n == 0 {
-			fmt.Println("\nEOF")
-			break
-		}
-		//fmt.Printf("%v\n", string(buff[:n]))
-		switch string(buff[:n]) {
-		case "\r":
-			//fmt.Println("found carriage return")
-		case "\n":
-			//fmt.Println("found newline")
-			noofreturns++
-		default:
-			stringbuff = fmt.Sprintf("%s%s", stringbuff, string(buff[:n]))
-		}
-		if noofreturns > 1 {
-			fmt.Printf("result: %s\n", stringbuff)
-			break
-		}
-	}
-	return stringbuff
-}
-
-func readwriteport(port serial.Port, v senbiotpkg.RequestResponse) (response string) {
-	var n int
-	var err error
-	fmt.Printf("%s\n", v.Request)
-	n, err = port.Write([]byte(fmt.Sprintf("%s\r\n", v.Request)))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Sent %v bytes\n", n)
-	resultString := readResponse(port)
-	if len(v.Response) != 0 && resultString != v.Response {
-		log.Fatal("response was:", resultString, "expected: ", v.Response)
-	} else {
-		response = resultString
-	}
-	// Wait two seconds to have this machine stabilize a bit
-	const delay = 1000 * time.Millisecond
-	time.Sleep(delay)
-
-	return response
-}
-
 //the messages section is run, with answers to be expected
-func sendMsgs(port serial.Port, c senbiotpkg.Setup, message *string) {
+func SendMsgs(port serial.Port, c senbiotpkg.Setup, message *string) {
 	fmt.Printf("%s", message)
 	//convert string to hex, calculate length
 	var messageString string
@@ -282,6 +232,6 @@ func sendMsgs(port serial.Port, c senbiotpkg.Setup, message *string) {
 		log.Fatal(err)
 	}
 	fmt.Printf("Sent %v bytes\n", n)
-	readResponse(port)
+	senbiotpkg.ReadResponse(port)
 
 }

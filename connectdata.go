@@ -8,7 +8,10 @@ import (
 
 // We can have a range of setups for different circumstances and devices
 type Setups struct {
-	Stps []Setup `yaml:"setups"`
+	Device   string  `yaml:"device"`
+	Provider string  `yaml:"provider"`
+	PortID   string  `yaml:"portID"`
+	Stps     []Setup `yaml:"setups"`
 }
 
 // Setup struct has the complete sequence of commands

@@ -1,4 +1,7 @@
 ---
+device: ublox01b
+provider: t-mobilenl
+portID: /dev/tty.usbmodem1411
 setups:
 # tmobilenl 01b setup    
     -   setup:       ublox01b
