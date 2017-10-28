@@ -62,11 +62,27 @@ func main() {
 
 	var Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		fmt.Fprintf(os.Stderr, "  cat yourfile.txt | %s:\n", os.Args[0])
+
 		flag.PrintDefaults()
 	}
-	if flag.NFlag() == 0 {
+
+	pipemessage, _ := os.Stdin.Stat()
+	var messagebyte []byte
+
+	if (pipemessage.Mode()&os.ModeCharDevice) == os.ModeCharDevice && len(*message) == 0 && flag.NFlag() == 0 {
 		Usage()
 		return
+	} else if pipemessage.Size() > 0 {
+		//reader := bufio.NewReader(os.Stdin)
+		//messagebyte, err = reader.ReadBytes()
+		messagebyte, _ = ioutil.ReadAll(os.Stdin)
+	} else if len(*message) != 0 {
+		fmt.Printf("%s", message)
+		//convert string to hex, calculate length
+		var messageString string
+		messageString = *message
+		messagebyte = []byte(messageString)
 	}
 
 	d, err := ioutil.ReadFile(*cfgFile)
@@ -95,7 +111,6 @@ func main() {
 		} else {
 			ChosenDevice = c.Device
 		}
-
 	}
 
 	if len(c.PortID) == 0 && len(*portID) == 0 {
@@ -121,7 +136,6 @@ func main() {
 		} else {
 			ChosenProvider = c.Provider
 		}
-
 	}
 
 	mode := &serial.Mode{
@@ -158,7 +172,7 @@ func main() {
 			case "SetupNetwork":
 				SetupNetwork(port, currentSetup)
 			case "SendMessage":
-				SendMsgs(port, currentSetup, message)
+				SendMsgs(port, currentSetup, messagebyte)
 			case "WaitForNetwork":
 				WaitForNetwork(port, currentSetup)
 			case "ScanPorts":
@@ -169,7 +183,7 @@ func main() {
 		// we assume the device has already been setup
 		SetupNetwork(port, currentSetup)
 		WaitForNetwork(port, currentSetup)
-		SendMsgs(port, currentSetup, message)
+		SendMsgs(port, currentSetup, messagebyte)
 	}
 }
 
@@ -220,21 +234,16 @@ func WaitForNetwork(port serial.Port, c senbiotpkg.Setup) string {
 		if i != 0 {
 			log.Fatal("could not get connection: ", result)
 		}
-
 	}
 	return result
 }
 
 //the messages section is run, with answers to be expected
-func SendMsgs(port serial.Port, c senbiotpkg.Setup, message *string) {
-	fmt.Printf("%s", message)
-	//convert string to hex, calculate length
-	var messageString string
-	messageString = *message
-	src := []byte(messageString)
-	dst := make([]byte, hex.EncodedLen(len(src)))
-	hex.Encode(dst, src)
-	//fmt.Printf("%s %d %s, %s\n", dst, len(dst), src, messageString)
+func SendMsgs(port serial.Port, c senbiotpkg.Setup, messagebyte []byte) {
+	fmt.Println(messagebyte)
+	dst := make([]byte, hex.EncodedLen(len(messagebyte)))
+	hex.Encode(dst, messagebyte)
+	//fmt.Printf("%s %d %s, %s\n", dst, len(dst), messagebyte, messageString)
 	sendString := fmt.Sprintf("%s%d,%s\r\n", c.SendMessageString, len(dst), dst)
 	fmt.Println(sendString)
 	n, err := port.Write([]byte(sendString))
