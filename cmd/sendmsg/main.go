@@ -5,7 +5,6 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/johanhenselmans/senbiotpkg"
@@ -14,8 +13,6 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"strings"
-	"time"
 )
 
 var (
@@ -28,35 +25,7 @@ var (
 	defaultProvider = "t-mobilenl"
 )
 
-type command []string
-
-func (c *command) String() string {
-	return fmt.Sprint(*c)
-}
-
-// Set is the method to set the flag value, part of the flag.Value interface.
-// Set's argument is a string to be parsed to set the flag.
-// It's a comma-separated list, so we split it.
-func (c *command) Set(value string) error {
-	// If we wanted to allow the flag to be set multiple times,
-	// accumulating values, we would delete this if statement.
-	// That would permit usages such as
-	//-deltaT 10s -deltaT 15s
-	// and other combinations.
-	if len(*c) > 0 {
-		return errors.New("command flag already set")
-	}
-	for _, dt := range strings.Split(value, ",") {
-		commandsstring := dt
-		*c = append(*c, commandsstring)
-	}
-	return nil
-}
-
-var commands command
-
 func main() {
-	flag.Var(&commands, "command", "comma-separated list of commands (Reboot, Init, SetupNetwork, WaitForNetwork, ConfigInfo, NetworkInfo, SendMessage, ScanPorts) to use ")
 	flag.Parse()
 
 	var Usage = func() {
@@ -77,7 +46,7 @@ func main() {
 		//messagebyte, err = reader.ReadBytes()
 		messagebyte, _ = ioutil.ReadAll(os.Stdin)
 	} else if len(*message) != 0 {
-		//fmt.Printf("%s", *message)
+		//fmt.Printf("message: %s\n", *message)
 		//convert string to hex, calculate length
 		var messageString string
 		messageString = *message
@@ -147,6 +116,7 @@ func main() {
 		senbiotpkg.ScanPorts()
 		log.Fatal("serial port [", ChosenPort, "] can not be opened: ", err)
 	}
+
 	var currentSetup senbiotpkg.Setup
 	for _, v := range c.Stps {
 		//fmt.Printf("%d = %s\n", i, v.Provider)
@@ -158,79 +128,8 @@ func main() {
 	if len(currentSetup.Setup) == 0 {
 		log.Fatal("could not find setup for device ", ChosenDevice, " for provider ", ChosenProvider)
 	}
-	if len(commands) > 0 {
-		for _, aCommand := range commands {
-			fmt.Printf("command: %s \n", aCommand)
-			switch aCommand {
-			case "ConfigInfo":
-				senbiotpkg.ConfigInfo(port, currentSetup)
-			case "NetworkInfo":
-				senbiotpkg.NetworkInfo(port, currentSetup)
-			case "Init":
-				SetupInit(port, currentSetup)
-			case "Reboot":
-				RebootDevice(port, currentSetup)
-			case "SetupNetwork":
-				SetupNetwork(port, currentSetup)
-			case "SendMessage":
-				SendMsgs(port, currentSetup, messagebyte)
-			case "WaitForNetwork":
-				WaitForNetwork(port, currentSetup)
-			case "ScanPorts":
-				senbiotpkg.ScanPorts()
-			}
-		}
-	} else {
-		// we assume the device has already been setup
-		SetupNetwork(port, currentSetup)
-		WaitForNetwork(port, currentSetup)
-		SendMsgs(port, currentSetup, messagebyte)
-	}
-}
-
-// rebootDevice reboots the device and waits 7 seconds for it to come up
-func RebootDevice(port serial.Port, c senbiotpkg.Setup) {
-	for _, v := range c.Reboot {
-		senbiotpkg.ReadWritePort(port, v)
-	}
-	const delay = 7000 * time.Millisecond
-	time.Sleep(delay)
-}
-
-//the init section of the yaml page of the device with answers is run, stored in nv memory, has to be run only once
-func SetupInit(port serial.Port, c senbiotpkg.Setup) {
-	for _, v := range c.Init {
-		senbiotpkg.ReadWritePort(port, v)
-	}
-}
-
-func SetupNetwork(port serial.Port, c senbiotpkg.Setup) {
-	for _, v := range c.SetupNetwork {
-		senbiotpkg.ReadWritePort(port, v)
-	}
-}
-
-func WaitForNetwork(port serial.Port, c senbiotpkg.Setup) string {
-	var result string
-	for _, v := range c.WaitForNetwork {
-		var i int
-		for i < 10 {
-			result = senbiotpkg.ReadWritePort(port, v)
-			fmt.Printf("result = %s neg response: %s\n", result, v.NegativeResponse)
-			if !strings.Contains(result, v.NegativeResponse) {
-				i = 0
-				break
-			} else {
-				const delay = 1000 * time.Millisecond
-				time.Sleep(delay)
-				i++
-			}
-		}
-		if i != 0 {
-			log.Fatal("could not get connection: ", result)
-		}
-	}
-	return result
+	// we assume the device has already been setup and a connection has been made
+	SendMsgs(port, currentSetup, messagebyte)
 }
 
 //the messages section is run, with answers to be expected
