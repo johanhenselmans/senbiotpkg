@@ -5,7 +5,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -240,10 +239,7 @@ func WaitForNetwork(port serial.Port, c senbiotpkg.Setup) string {
 
 //the messages section is run, with answers to be expected
 func SendMsgs(port serial.Port, c senbiotpkg.Setup, messagebyte []byte) {
-	fmt.Println(messagebyte)
-	dst := make([]byte, hex.EncodedLen(len(messagebyte)))
-	hex.Encode(dst, messagebyte)
-	//fmt.Printf("%s %d %s, %s\n", dst, len(dst), messagebyte, messageString)
+	dst := senbiotpkg.EncodeMessageByte(messagebyte)
 	sendString := fmt.Sprintf("%s%d,%s\r\n", c.SendMessageString, len(dst), dst)
 	fmt.Println(sendString)
 	n, err := port.Write([]byte(sendString))
