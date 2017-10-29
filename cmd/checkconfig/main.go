@@ -15,14 +15,12 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 )
 
 var (
 	portID          = flag.String("portID", "", "serial port to communicate")
 	device          = flag.String("device", "", "Device name to use for command strings, eq ublox01b, ublox02b, quicktel")
 	provider        = flag.String("provider", "", "Provider to connect to, eg, t-mobilenl, vodafone")
-	message         = flag.String("message", "", "Data to send")
 	cfgFile         = flag.String("config", "config.yml", "config-file for the API-settings")
 	defaultName     = "ublox01b"
 	defaultProvider = "t-mobilenl"
@@ -56,7 +54,7 @@ func (c *command) Set(value string) error {
 var commands command
 
 func main() {
-	flag.Var(&commands, "command", "comma-separated list of commands (Reboot, Init, SetupNetwork, WaitForNetwork, ConfigInfo, NetworkInfo, SendMessage, ScanPorts) to use ")
+	flag.Var(&commands, "command", "comma-separated list of commands (ConfigInfo, NetworkInfo, ScanPorts) to use ")
 	flag.Parse()
 
 	var Usage = func() {
@@ -64,24 +62,6 @@ func main() {
 		fmt.Fprintf(os.Stderr, "  cat yourfile.txt | %s:\n", os.Args[0])
 
 		flag.PrintDefaults()
-	}
-
-	pipemessage, _ := os.Stdin.Stat()
-	var messagebyte []byte
-
-	if (pipemessage.Mode()&os.ModeCharDevice) == os.ModeCharDevice && len(*message) == 0 && flag.NFlag() == 0 {
-		Usage()
-		return
-	} else if pipemessage.Size() > 0 {
-		//reader := bufio.NewReader(os.Stdin)
-		//messagebyte, err = reader.ReadBytes()
-		messagebyte, _ = ioutil.ReadAll(os.Stdin)
-	} else if len(*message) != 0 {
-		fmt.Printf("%s", message)
-		//convert string to hex, calculate length
-		var messageString string
-		messageString = *message
-		messagebyte = []byte(messageString)
 	}
 
 	d, err := ioutil.ReadFile(*cfgFile)
@@ -165,83 +145,14 @@ func main() {
 				senbiotpkg.ConfigInfo(port, currentSetup)
 			case "NetworkInfo":
 				senbiotpkg.NetworkInfo(port, currentSetup)
-			case "Init":
-				SetupInit(port, currentSetup)
-			case "Reboot":
-				RebootDevice(port, currentSetup)
-			case "SetupNetwork":
-				SetupNetwork(port, currentSetup)
-			case "SendMessage":
-				SendMsgs(port, currentSetup, messagebyte)
-			case "WaitForNetwork":
-				WaitForNetwork(port, currentSetup)
 			case "ScanPorts":
 				senbiotpkg.ScanPorts()
 			}
 		}
 	} else {
 		// we assume the device has already been setup
-		SetupNetwork(port, currentSetup)
-		WaitForNetwork(port, currentSetup)
-		SendMsgs(port, currentSetup, messagebyte)
+		senbiotpkg.ScanPorts()
+		senbiotpkg.ConfigInfo(port, currentSetup)
+		senbiotpkg.NetworkInfo(port, currentSetup)
 	}
-}
-
-// rebootDevice reboots the device and waits 7 seconds for it to come up
-func RebootDevice(port serial.Port, c senbiotpkg.Setup) {
-	for _, v := range c.Reboot {
-		senbiotpkg.ReadWritePort(port, v)
-	}
-	const delay = 7000 * time.Millisecond
-	time.Sleep(delay)
-}
-
-//the init section of the yaml page of the device with answers is run, stored in nv memory, has to be run only once
-func SetupInit(port serial.Port, c senbiotpkg.Setup) {
-	for _, v := range c.Init {
-		senbiotpkg.ReadWritePort(port, v)
-	}
-}
-
-func SetupNetwork(port serial.Port, c senbiotpkg.Setup) {
-	for _, v := range c.SetupNetwork {
-		senbiotpkg.ReadWritePort(port, v)
-	}
-}
-
-func WaitForNetwork(port serial.Port, c senbiotpkg.Setup) string {
-	var result string
-	for _, v := range c.WaitForNetwork {
-		var i int
-		for i < 10 {
-			result = senbiotpkg.ReadWritePort(port, v)
-			fmt.Printf("result = %s neg response: %s\n", result, v.NegativeResponse)
-			if !strings.Contains(result, v.NegativeResponse) {
-				i = 0
-				break
-			} else {
-				const delay = 1000 * time.Millisecond
-				time.Sleep(delay)
-				i++
-			}
-		}
-		if i != 0 {
-			log.Fatal("could not get connection: ", result)
-		}
-	}
-	return result
-}
-
-//the messages section is run, with answers to be expected
-func SendMsgs(port serial.Port, c senbiotpkg.Setup, messagebyte []byte) {
-	dst := senbiotpkg.EncodeMessageByte(messagebyte)
-	sendString := fmt.Sprintf("%s%d,%s\r\n", c.SendMessageString, len(dst), dst)
-	fmt.Println(sendString)
-	n, err := port.Write([]byte(sendString))
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Printf("Sent %v bytes\n", n)
-	senbiotpkg.ReadResponse(port)
-
 }

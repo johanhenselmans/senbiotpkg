@@ -45,7 +45,13 @@ func ScanPorts() {
 		log.Fatal("No serial ports found!")
 	}
 	for _, port := range ports {
-		fmt.Printf("Found port: %v\n", port)
+		fmt.Printf("Serial port found: %v\n", port)
 	}
 
+}
+
+func NetworkInfo(port serial.Port, c Setup) {
+	for _, v := range c.NetworkInfo {
+		ReadWritePort(port, v)
+	}
 }
