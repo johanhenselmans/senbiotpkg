@@ -1,6 +1,7 @@
 package senbiotpkg
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"log"
@@ -39,4 +40,21 @@ func DecodeMessageString(message string) string {
 	decoded, _ := hex.DecodeString(message)
 	receiveString := fmt.Sprintf("%s", decoded)
 	return receiveString
+}
+
+func DecodeBase64MessageByte(messagebyte []byte) string {
+	decoded := make([]byte, base64.StdEncoding.DecodedLen(len(messagebyte)))
+	_, err := base64.StdEncoding.Decode(decoded, messagebyte)
+	if err != nil {
+		return fmt.Sprintf("error:", err)
+	}
+	return fmt.Sprintf("%s", decoded)
+}
+
+func DecodeBase64MessageString(messagestring string) string {
+	decoded, err := base64.StdEncoding.DecodeString(messagestring)
+	if err != nil {
+		return fmt.Sprintf("error:", err)
+	}
+	return fmt.Sprintf("%s", decoded)
 }
